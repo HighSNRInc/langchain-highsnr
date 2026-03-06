@@ -80,9 +80,9 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
 
         if sourceless:
             _log.warning(
-                "%d chunk(s) have no 'source' metadata key and cannot be grouped "
-                "by document. They will be compressed together in a single call, "
-                "which is not benchmarked.",
+                "%d chunk(s) have a missing or null 'source' metadata key and "
+                "cannot be grouped by document. They will be compressed together "
+                "in a single call, which is not benchmarked.",
                 len(sourceless),
             )
 
@@ -109,7 +109,11 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
         indices = response.get("selected_chunk_indices") or []
         if indices:
             valid = [
-                i for i in indices if isinstance(i, int) and 0 <= i < len(documents)
+                i
+                for i in indices
+                if isinstance(i, int)
+                and not isinstance(i, bool)
+                and 0 <= i < len(documents)
             ]
             if len(valid) < len(indices):
                 _log.warning(
@@ -134,4 +138,4 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
         shared: Dict[str, Any] = dict(documents[0].metadata) if documents else {}
         for doc in documents[1:]:
             shared = {k: v for k, v in shared.items() if doc.metadata.get(k) == v}
-        return [Document(page_content=c, metadata=shared) for c in kept]
+        return [Document(page_content=c, metadata=dict(shared)) for c in kept]

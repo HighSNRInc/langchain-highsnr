@@ -119,7 +119,7 @@ def test_warns_when_no_source_metadata(
     with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
         _compressor().compress_documents(docs, query="q")
 
-    assert "no 'source' metadata key" in caplog.text
+    assert "missing or null 'source'" in caplog.text
 
 
 def test_warns_when_group_by_source_false(
@@ -206,3 +206,62 @@ def test_fallback_chunks_preserve_shared_metadata(
     assert len(result) == 1
     assert result[0].metadata == {"source": "doc1"}  # page dropped, source kept
     assert "cannot be accurately attributed" in caplog.text
+
+
+def test_fallback_metadata_is_not_aliased(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Fallback path: mutating one output doc's metadata must not affect siblings."""
+
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse({"selected_chunks": ["chunk A", "chunk B"]})
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [Document(page_content="A", metadata={"source": "doc1"})]
+    result = _compressor().compress_documents(docs, query="q")
+
+    assert len(result) == 2
+    result[0].metadata["injected"] = "x"
+    assert "injected" not in result[1].metadata
+
+
+def test_boolean_indices_are_rejected(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """True/False must not be accepted as valid chunk indices."""
+
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse(
+            {"selected_chunks": ["A", "B"], "selected_chunk_indices": [True, False]}
+        )
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [
+        Document(page_content="A", metadata={"source": "doc1"}),
+        Document(page_content="B", metadata={"source": "doc1"}),
+    ]
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
+        result = _compressor().compress_documents(docs, query="q")
+
+    # All boolean indices filtered → falls through to selected_chunks fallback
+    assert all(doc.page_content in ("A", "B") for doc in result)
+    assert "invalid" in caplog.text
+
+
+def test_source_none_value_triggers_sourceless_warning(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """source=None (key present, null value) should trigger the same warning as missing key."""
+
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse({"selected_chunks": ["r"], "selected_chunk_indices": [0]})
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [Document(page_content="chunk", metadata={"source": None})]
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
+        _compressor().compress_documents(docs, query="q")
+
+    assert "missing or null 'source'" in caplog.text
