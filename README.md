@@ -146,32 +146,58 @@ compressor = HighSNRDocumentCompressor(
 ## Benchmark results
 
 Evaluated on [LongBench v1](https://github.com/THUDM/LongBench) with GPT-4o, n=200 per dataset.
-HighSNR compresses each document to the target budget; GPT-4o answers the question from the
+HighSNR compresses each document to the target token budget; GPT-4o answers the question from the
 compressed output. QA F1 score — higher is better.
 
-### HotpotQA (multi-hop QA)
+**generic** = no `context_hint` &nbsp;|&nbsp; **biased** = `context_hint` set to the question
 
-| Budget | F1 score | Actual tokens kept |
-|---|---|---|
-| 50% | 65.29 | 55.9% (median 55.4%) |
-| 60% | 66.34 | 67.9% (median 67.3%) |
-| 70% | 68.08 | 79.8% (median 79.1%) |
-| **80%** | **70.70** | 91.4% (median 90.8%) |
-| Full doc (baseline) | 69.71 | 100% |
+---
 
-At 80% budget, HighSNR **beats full-context F1** (70.70 vs 69.71).
+### HotpotQA
 
-### Qasper (single-hop QA on scientific papers)
+Multi-hop QA over Wikipedia.
 
-| Budget | F1 score | Actual tokens kept |
-|---|---|---|
-| 50% | 35.51 | 54.7% (median 54.4%) |
-| 60% | 38.16 | 66.4% (median 66.2%) |
-| 70% | 41.36 | 78.0% (median 77.6%) |
-| **80%** | **45.37** | 89.9% (median 89.5%) |
-| Full doc (baseline) | 47.22 | 100% |
+| Config | 50% | 60% | 70% | 80% | 100% (full) |
+|---|---:|---:|---:|---:|---:|
+| generic (no hint) | 65.29 | 66.34 | 68.08 | 70.70 | — |
+| biased (with hint) | 67.28 | 68.02 | 69.95 | **70.96** | — |
+| full (no compression) | — | — | — | — | 69.71 |
+
+At 80% budget with hint, HighSNR **beats full-context F1** (70.96 vs 69.71).
+
+**Actual compression ratios (HotpotQA, n=400 calls per target):**
+
+| Target | Mean | Median | Min | Max |
+|---:|---:|---:|---:|---:|
+| 50% | 55.9% | 55.4% | 41.6% | 71.7% |
+| 60% | 67.9% | 67.3% | 55.0% | 83.9% |
+| 70% | 79.8% | 79.1% | 69.5% | 99.9% |
+| 80% | 91.4% | 90.8% | 81.1% | 100.0% |
+
+---
+
+### QASPER
+
+QA over NLP research papers.
+
+| Config | 50% | 60% | 70% | 80% | 100% (full) |
+|---|---:|---:|---:|---:|---:|
+| generic (no hint) | 35.51 | 38.16 | 41.36 | 45.37 | — |
+| biased (with hint) | **39.87** | **40.76** | **42.97** | 45.21 | — |
+| full (no compression) | — | — | — | — | 47.22 |
 
 At 80% budget, HighSNR retains **96% of full-context F1** on scientific QA.
+
+**Actual compression ratios (QASPER, n=400 calls per target):**
+
+| Target | Mean | Median | Min | Max |
+|---:|---:|---:|---:|---:|
+| 50% | 54.7% | 54.4% | 37.5% | 69.5% |
+| 60% | 66.4% | 66.2% | 47.3% | 79.7% |
+| 70% | 78.0% | 77.6% | 69.2% | 92.0% |
+| 80% | 89.9% | 89.5% | 79.4% | 100.0% |
+
+---
 
 > Actual token ratios exceed the target because HighSNR never cuts a chunk mid-sentence.
 > Chunks are selected whole — if the next chunk would exceed the budget it is skipped,
