@@ -108,7 +108,9 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
         )
         indices = response.get("selected_chunk_indices") or []
         if indices:
-            valid = [i for i in indices if isinstance(i, int) and 0 <= i < len(documents)]
+            valid = [
+                i for i in indices if isinstance(i, int) and 0 <= i < len(documents)
+            ]
             if len(valid) < len(indices):
                 _log.warning(
                     "HighSNR API returned %d invalid chunk index/indices "
