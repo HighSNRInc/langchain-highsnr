@@ -250,6 +250,19 @@ def test_boolean_indices_are_rejected(
     assert "invalid" in caplog.text
 
 
+def test_http_error_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        client_mod.requests,
+        "post",
+        lambda *a, **kw: _FakeResponse({}, status_code=500),
+    )
+
+    with pytest.raises(RuntimeError, match="HTTP 500"):
+        _compressor().compress_documents(
+            [Document(page_content="chunk", metadata={"source": "doc1"})], query="q"
+        )
+
+
 def test_source_none_value_triggers_sourceless_warning(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:

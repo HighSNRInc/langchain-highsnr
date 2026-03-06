@@ -103,6 +103,17 @@ def test_empty_input_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     assert list(result) == []
 
 
+def test_http_error_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        client_mod.requests,
+        "post",
+        lambda *a, **kw: _FakeResponse({}, status_code=401),
+    )
+
+    with pytest.raises(RuntimeError, match="HTTP 401"):
+        _transformer().transform_documents([Document(page_content="text")])
+
+
 def test_output_metadata_is_not_aliased(monkeypatch: pytest.MonkeyPatch) -> None:
     """Mutating one output doc's metadata must not affect sibling docs."""
 
