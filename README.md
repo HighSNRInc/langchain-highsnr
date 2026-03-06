@@ -145,7 +145,7 @@ compressor = HighSNRDocumentCompressor(
 
 ## Benchmark results
 
-Evaluated on [LongBench v1](https://github.com/THUDM/LongBench) with GPT-4o, n=200 per dataset.
+Evaluated on [LongBench v1](https://github.com/THUDM/LongBench/tree/main/LongBench) with GPT-4o, n=200 per dataset.
 HighSNR compresses each document to the target token budget; GPT-4o answers the question from the
 compressed output. QA F1 score — higher is better.
 
@@ -159,13 +159,13 @@ Multi-hop QA over Wikipedia.
 
 | Config | 50% | 60% | 70% | 80% | 100% (full) |
 |---|---:|---:|---:|---:|---:|
-| generic (no hint) | 65.29 | 66.34 | 68.08 | 70.70 | — |
+| generic (no hint) | 65.29 | 66.34 | 68.08 | **70.70** | — |
 | biased (with hint) | 67.28 | 68.02 | 69.95 | **70.96** | — |
 | full (no compression) | — | — | — | — | 69.71 |
 
 At 80% budget with hint, HighSNR **beats full-context F1** (70.96 vs 69.71).
 
-**Actual compression ratios (HotpotQA, n=400 calls per target):**
+**Actual compression ratios (HotpotQA, n=200 calls per target):**
 
 | Target | Mean | Median | Min | Max |
 |---:|---:|---:|---:|---:|
@@ -188,7 +188,7 @@ QA over NLP research papers.
 
 At 80% budget, HighSNR retains **96% of full-context F1** on scientific QA.
 
-**Actual compression ratios (QASPER, n=400 calls per target):**
+**Actual compression ratios (QASPER, n=200 calls per target):**
 
 | Target | Mean | Median | Min | Max |
 |---:|---:|---:|---:|---:|
@@ -205,7 +205,7 @@ At 80% budget, HighSNR retains **96% of full-context F1** on scientific QA.
 
 ### Latency
 
-Measured on live API (0.5 vCPU / 1 GB Fargate), n=3,200 calls.
+Measured on live API (0.5 vCPU / 1 GB Fargate), n=3200 calls.
 
 | Document size | Median | Mean |
 |---|---|---|
