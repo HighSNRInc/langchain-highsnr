@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "LangChain integration for HighSNR — compress documents to a token budget, keeping the highest-signal content."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
 dependencies = [
     "langchain-core>=0.3.0,<2",
     "requests>=2.32.0",

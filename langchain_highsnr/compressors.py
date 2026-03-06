@@ -73,7 +73,7 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
         sourceless: List[Document] = []
         for doc in documents:
             src = doc.metadata.get("source")
-            if src:
+            if src is not None:
                 groups[str(src)].append(doc)
             else:
                 sourceless.append(doc)
@@ -108,8 +108,28 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
         )
         indices = response.get("selected_chunk_indices") or []
         if indices:
-            return [documents[i] for i in indices]
-        # Fallback: server returned chunks without indices
+            valid = [i for i in indices if isinstance(i, int) and 0 <= i < len(documents)]
+            if len(valid) < len(indices):
+                _log.warning(
+                    "HighSNR API returned %d invalid chunk index/indices "
+                    "(negative or out of range); ignoring them. "
+                    "%d of %d indices are valid.",
+                    len(indices) - len(valid),
+                    len(valid),
+                    len(indices),
+                )
+            if valid:
+                return [documents[i] for i in valid]
+        # Fallback: server returned chunks without indices (or all indices were invalid)
         kept = response.get("selected_chunks", [])
-        metadata = documents[0].metadata if documents else {}
-        return [Document(page_content=c, metadata=metadata) for c in kept]
+        if not kept:
+            return []
+        _log.warning(
+            "HighSNR API returned selected_chunks without valid indices; "
+            "chunk-level metadata (e.g. page) cannot be accurately attributed."
+        )
+        # Preserve only metadata keys that are identical across all docs in the group
+        shared: Dict[str, Any] = dict(documents[0].metadata) if documents else {}
+        for doc in documents[1:]:
+            shared = {k: v for k, v in shared.items() if doc.metadata.get(k) == v}
+        return [Document(page_content=c, metadata=shared) for c in kept]

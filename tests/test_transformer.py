@@ -101,3 +101,19 @@ def test_empty_input_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     result = _transformer().transform_documents([])
 
     assert list(result) == []
+
+
+def test_output_metadata_is_not_aliased(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Mutating one output doc's metadata must not affect sibling docs."""
+
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse({"selected_chunks": ["chunk A", "chunk B"]})
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [Document(page_content="text", metadata={"source": "paper.pdf", "page": 1})]
+    result = list(_transformer().transform_documents(docs))
+
+    assert len(result) == 2
+    result[0].metadata["page"] = 99
+    assert result[1].metadata["page"] == 1

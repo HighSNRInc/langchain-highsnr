@@ -143,3 +143,66 @@ def test_empty_input_returns_empty(monkeypatch: pytest.MonkeyPatch) -> None:
     result = _compressor().compress_documents([], query="q")
 
     assert list(result) == []
+
+
+def test_invalid_indices_out_of_range_are_filtered(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse(
+            {"selected_chunks": ["A", "B"], "selected_chunk_indices": [0, 99]}
+        )
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [Document(page_content="A", metadata={"source": "doc1"})]
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
+        result = _compressor().compress_documents(docs, query="q")
+
+    assert len(result) == 1
+    assert result[0].page_content == "A"
+    assert "invalid" in caplog.text
+
+
+def test_negative_indices_are_filtered(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse(
+            {"selected_chunks": ["A", "B"], "selected_chunk_indices": [0, -1]}
+        )
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [
+        Document(page_content="A", metadata={"source": "doc1"}),
+        Document(page_content="B", metadata={"source": "doc1"}),
+    ]
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
+        result = _compressor().compress_documents(docs, query="q")
+
+    assert len(result) == 1
+    assert result[0].page_content == "A"
+    assert "invalid" in caplog.text
+
+
+def test_fallback_chunks_preserve_shared_metadata(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Fallback path: shared keys (source) are kept; divergent keys (page) are dropped."""
+
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse({"selected_chunks": ["kept chunk"]})
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [
+        Document(page_content="A", metadata={"source": "doc1", "page": 1}),
+        Document(page_content="B", metadata={"source": "doc1", "page": 2}),
+    ]
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
+        result = _compressor().compress_documents(docs, query="q")
+
+    assert len(result) == 1
+    assert result[0].metadata == {"source": "doc1"}  # page dropped, source kept
+    assert "cannot be accurately attributed" in caplog.text

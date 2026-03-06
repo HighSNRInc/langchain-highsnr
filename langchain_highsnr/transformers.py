@@ -62,5 +62,5 @@ class HighSNRDocumentTransformer(BaseDocumentTransformer):
                 context_hint=self.context_hint,
             )
             for chunk in response.get("selected_chunks", []):
-                result.append(Document(page_content=chunk, metadata=doc.metadata))
+                result.append(Document(page_content=chunk, metadata=dict(doc.metadata)))
         return result
