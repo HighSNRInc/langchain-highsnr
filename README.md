@@ -1,6 +1,6 @@
 # langchain-highsnr
 
-LangChain integration for [HighSNR](https://high-snr.com) — compress documents to a token budget, keeping the highest-signal content.
+LangChain integration for [HighSNR](https://www.high-snr.com/#api) — compress documents to a token budget, keeping the highest-signal content.
 
 ```bash
 pip install langchain-highsnr
@@ -227,5 +227,5 @@ Measured on live API (0.5 vCPU / 1 GB Fargate), n=3200 calls.
 ## Links
 
 - API console & free tier: [console.high-snr.com](https://console.high-snr.com)
-- Homepage: [high-snr.com](https://high-snr.com)
+- Homepage: [high-snr.com](https://www.high-snr.com/#api)
 - Support: [hello@high-snr.com](mailto:hello@high-snr.com)
