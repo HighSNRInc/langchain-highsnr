@@ -118,7 +118,7 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
             if len(valid) < len(indices):
                 _log.warning(
                     "HighSNR API returned %d invalid chunk index/indices "
-                    "(negative or out of range); ignoring them. "
+                    "(negative, out of range, or wrong type); ignoring them. "
                     "%d of %d indices are valid.",
                     len(indices) - len(valid),
                     len(valid),
