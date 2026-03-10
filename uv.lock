@@ -383,7 +383,7 @@ wheels = [
 [[package]]
 name = "langchain-highsnr"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "langchain-core", version = "0.3.83", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "langchain-core", version = "1.2.17", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
