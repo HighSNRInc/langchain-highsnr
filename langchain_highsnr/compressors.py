@@ -104,9 +104,12 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
             max_output_tokens=self.max_output_tokens,
             include_boundaries=self.include_boundaries,
             context_hint=query or None,
-            return_indices=True,
+            return_chunk_metadata=True,
         )
-        indices = response.get("selected_chunk_indices") or []
+        for w in response.get("warnings") or []:
+            _log.warning("HighSNR API warning: %s", w)
+        chunk_meta = response.get("chunk_metadata") or {}
+        indices = chunk_meta.get("selected_chunk_indices") or []
         if indices:
             valid = [
                 i

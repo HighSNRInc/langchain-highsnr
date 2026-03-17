@@ -44,7 +44,7 @@ def test_groups_chunks_by_source_into_separate_calls(
         return _FakeResponse(
             {
                 "selected_chunks": json["chunks"],
-                "selected_chunk_indices": list(range(n)),
+                "chunk_metadata": {"selected_chunk_indices": list(range(n))},
             }
         )
 
@@ -66,7 +66,12 @@ def test_passes_query_as_context_hint(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         captured.update(json)
-        return _FakeResponse({"selected_chunks": ["r"], "selected_chunk_indices": [0]})
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -78,7 +83,12 @@ def test_passes_query_as_context_hint(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_preserves_metadata_via_indices(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["A1"], "selected_chunk_indices": [0]})
+        return _FakeResponse(
+            {
+                "selected_chunks": ["A1"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -97,7 +107,12 @@ def test_include_boundaries_defaults_false(monkeypatch: pytest.MonkeyPatch) -> N
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         captured.update(json)
-        return _FakeResponse({"selected_chunks": ["r"], "selected_chunk_indices": [0]})
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -111,7 +126,12 @@ def test_warns_when_no_source_metadata(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["r"], "selected_chunk_indices": [0]})
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -126,7 +146,12 @@ def test_warns_when_group_by_source_false(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["r"], "selected_chunk_indices": [0]})
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -150,7 +175,10 @@ def test_invalid_indices_out_of_range_are_filtered(
 ) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
-            {"selected_chunks": ["A", "B"], "selected_chunk_indices": [0, 99]}
+            {
+                "selected_chunks": ["A", "B"],
+                "chunk_metadata": {"selected_chunk_indices": [0, 99]},
+            }
         )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
@@ -169,7 +197,10 @@ def test_negative_indices_are_filtered(
 ) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
-            {"selected_chunks": ["A", "B"], "selected_chunk_indices": [0, -1]}
+            {
+                "selected_chunks": ["A", "B"],
+                "chunk_metadata": {"selected_chunk_indices": [0, -1]},
+            }
         )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
@@ -233,7 +264,10 @@ def test_boolean_indices_are_rejected(
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
-            {"selected_chunks": ["A", "B"], "selected_chunk_indices": [True, False]}
+            {
+                "selected_chunks": ["A", "B"],
+                "chunk_metadata": {"selected_chunk_indices": [True, False]},
+            }
         )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
@@ -263,13 +297,60 @@ def test_http_error_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
 
+def test_sends_return_chunk_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: Dict[str, Any] = {}
+
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        captured.update(json)
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [Document(page_content="chunk", metadata={"source": "doc1"})]
+    _compressor().compress_documents(docs, query="q")
+
+    assert captured["return_chunk_metadata"] is True
+    assert "return_indices" not in captured
+
+
+def test_api_warnings_are_logged(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "warnings": ["budget exceeded"],
+            }
+        )
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    docs = [Document(page_content="chunk", metadata={"source": "doc1"})]
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.compressors"):
+        _compressor().compress_documents(docs, query="q")
+
+    assert "budget exceeded" in caplog.text
+
+
 def test_source_none_value_triggers_sourceless_warning(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     """source=None (key present, null value) should trigger the same warning as missing key."""
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["r"], "selected_chunk_indices": [0]})
+        return _FakeResponse(
+            {
+                "selected_chunks": ["r"],
+                "chunk_metadata": {"selected_chunk_indices": [0]},
+            }
+        )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 

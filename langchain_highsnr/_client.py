@@ -32,7 +32,8 @@ class HighSNRClient:
         max_output_tokens: int = 1000,
         include_boundaries: bool = True,
         context_hint: Optional[str] = None,
-        return_indices: bool = False,
+        return_metadata: bool = False,
+        return_chunk_metadata: bool = False,
     ) -> Dict[str, Any]:
         if document is None and chunks is None:
             raise ValueError("Either document or chunks must be provided")
@@ -41,7 +42,8 @@ class HighSNRClient:
         payload: Dict[str, Any] = {
             "max_output_tokens": max_output_tokens,
             "include_boundaries": include_boundaries,
-            "return_indices": return_indices,
+            "return_metadata": return_metadata,
+            "return_chunk_metadata": return_chunk_metadata,
         }
         if document is not None:
             payload["document"] = document

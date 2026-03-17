@@ -382,7 +382,7 @@ wheels = [
 
 [[package]]
 name = "langchain-highsnr"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core", version = "0.3.83", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
