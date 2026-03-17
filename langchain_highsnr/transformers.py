@@ -61,6 +61,8 @@ class HighSNRDocumentTransformer(BaseDocumentTransformer):
                 include_boundaries=self.include_boundaries,
                 context_hint=self.context_hint,
             )
+            for w in response.get("warnings") or []:
+                _log.warning("HighSNR API warning: %s", w)
             for chunk in response.get("selected_chunks", []):
                 result.append(Document(page_content=chunk, metadata=dict(doc.metadata)))
         return result

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, Dict, List
 
 import pytest
@@ -112,6 +113,22 @@ def test_http_error_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with pytest.raises(RuntimeError, match="HTTP 401"):
         _transformer().transform_documents([Document(page_content="text")])
+
+
+def test_api_warnings_are_logged(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
+        return _FakeResponse(
+            {"selected_chunks": ["compressed"], "warnings": ["budget exceeded"]}
+        )
+
+    monkeypatch.setattr(client_mod.requests, "post", fake_post)
+
+    with caplog.at_level(logging.WARNING, logger="langchain_highsnr.transformers"):
+        _transformer().transform_documents([Document(page_content="text")])
+
+    assert "budget exceeded" in caplog.text
 
 
 def test_output_metadata_is_not_aliased(monkeypatch: pytest.MonkeyPatch) -> None:
