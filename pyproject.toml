@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "langchain-highsnr"
-version = "0.1.1"
+version = "0.2.0"
 description = "LangChain integration for HighSNR — compress documents to a token budget, keeping the highest-signal content."
 readme = "README.md"
 requires-python = ">=3.9"

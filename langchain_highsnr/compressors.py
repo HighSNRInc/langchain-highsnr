@@ -104,12 +104,11 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
             max_output_tokens=self.max_output_tokens,
             include_boundaries=self.include_boundaries,
             context_hint=query or None,
-            return_chunk_metadata=True,
+            return_indices=True,
         )
         for w in response.get("warnings") or []:
             _log.warning("HighSNR API warning: %s", w)
-        chunk_meta = response.get("chunk_metadata") or {}
-        indices = chunk_meta.get("selected_chunk_indices") or []
+        indices = response.get("selected_chunk_indices") or []
         if indices:
             valid = [
                 i
@@ -130,11 +129,11 @@ class HighSNRDocumentCompressor(BaseDocumentCompressor):
             if valid:
                 return [documents[i] for i in valid]
         # Fallback: server returned chunks without indices (or all indices were invalid)
-        kept = response.get("selected_chunks", [])
+        kept = response.get("optimized_chunks", [])
         if not kept:
             return []
         _log.warning(
-            "HighSNR API returned selected_chunks without valid indices; "
+            "HighSNR API returned optimized_chunks without valid indices; "
             "chunk-level metadata (e.g. page) cannot be accurately attributed."
         )
         # Preserve only metadata keys that are identical across all docs in the group

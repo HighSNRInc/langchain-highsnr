@@ -33,7 +33,7 @@ class HighSNRClient:
         include_boundaries: bool = True,
         context_hint: Optional[str] = None,
         return_metadata: bool = False,
-        return_chunk_metadata: bool = False,
+        return_indices: bool = False,
     ) -> Dict[str, Any]:
         if document is None and chunks is None:
             raise ValueError("Either document or chunks must be provided")
@@ -43,7 +43,7 @@ class HighSNRClient:
             "max_output_tokens": max_output_tokens,
             "include_boundaries": include_boundaries,
             "return_metadata": return_metadata,
-            "return_chunk_metadata": return_chunk_metadata,
+            "return_indices": return_indices,
         }
         if document is not None:
             payload["document"] = document
@@ -52,7 +52,7 @@ class HighSNRClient:
         if context_hint:
             payload["context_hint"] = context_hint
         r = requests.post(
-            f"{self.base_url}/v1/optimize",
+            f"{self.base_url}/v2/optimize",
             json=payload,
             headers={"Authorization": f"Bearer {self._api_key}"},
             timeout=self.timeout_s,

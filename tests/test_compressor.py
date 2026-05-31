@@ -43,8 +43,8 @@ def test_groups_chunks_by_source_into_separate_calls(
         n = len(json.get("chunks", []))
         return _FakeResponse(
             {
-                "selected_chunks": json["chunks"],
-                "chunk_metadata": {"selected_chunk_indices": list(range(n))},
+                "optimized_chunks": json["chunks"],
+                "selected_chunk_indices": list(range(n)),
             }
         )
 
@@ -68,8 +68,8 @@ def test_passes_query_as_context_hint(monkeypatch: pytest.MonkeyPatch) -> None:
         captured.update(json)
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
             }
         )
 
@@ -85,8 +85,8 @@ def test_preserves_metadata_via_indices(monkeypatch: pytest.MonkeyPatch) -> None
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["A1"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["A1"],
+                "selected_chunk_indices": [0],
             }
         )
 
@@ -109,8 +109,8 @@ def test_include_boundaries_defaults_false(monkeypatch: pytest.MonkeyPatch) -> N
         captured.update(json)
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
             }
         )
 
@@ -128,8 +128,8 @@ def test_warns_when_no_source_metadata(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
             }
         )
 
@@ -148,8 +148,8 @@ def test_warns_when_group_by_source_false(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
             }
         )
 
@@ -176,8 +176,8 @@ def test_invalid_indices_out_of_range_are_filtered(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["A", "B"],
-                "chunk_metadata": {"selected_chunk_indices": [0, 99]},
+                "optimized_chunks": ["A", "B"],
+                "selected_chunk_indices": [0, 99],
             }
         )
 
@@ -198,8 +198,8 @@ def test_negative_indices_are_filtered(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["A", "B"],
-                "chunk_metadata": {"selected_chunk_indices": [0, -1]},
+                "optimized_chunks": ["A", "B"],
+                "selected_chunk_indices": [0, -1],
             }
         )
 
@@ -223,7 +223,7 @@ def test_fallback_chunks_preserve_shared_metadata(
     """Fallback path: shared keys (source) are kept; divergent keys (page) are dropped."""
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["kept chunk"]})
+        return _FakeResponse({"optimized_chunks": ["kept chunk"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -245,7 +245,7 @@ def test_fallback_metadata_is_not_aliased(
     """Fallback path: mutating one output doc's metadata must not affect siblings."""
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["chunk A", "chunk B"]})
+        return _FakeResponse({"optimized_chunks": ["chunk A", "chunk B"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -265,8 +265,8 @@ def test_boolean_indices_are_rejected(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["A", "B"],
-                "chunk_metadata": {"selected_chunk_indices": [True, False]},
+                "optimized_chunks": ["A", "B"],
+                "selected_chunk_indices": [True, False],
             }
         )
 
@@ -297,15 +297,15 @@ def test_http_error_propagates(monkeypatch: pytest.MonkeyPatch) -> None:
         )
 
 
-def test_sends_return_chunk_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_sends_return_indices(monkeypatch: pytest.MonkeyPatch) -> None:
     captured: Dict[str, Any] = {}
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         captured.update(json)
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
             }
         )
 
@@ -314,8 +314,8 @@ def test_sends_return_chunk_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
     docs = [Document(page_content="chunk", metadata={"source": "doc1"})]
     _compressor().compress_documents(docs, query="q")
 
-    assert captured["return_chunk_metadata"] is True
-    assert "return_indices" not in captured
+    assert captured["return_indices"] is True
+    assert "return_chunk_metadata" not in captured
 
 
 def test_api_warnings_are_logged(
@@ -324,8 +324,8 @@ def test_api_warnings_are_logged(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
                 "warnings": ["budget exceeded"],
             }
         )
@@ -347,8 +347,8 @@ def test_source_none_value_triggers_sourceless_warning(
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
             {
-                "selected_chunks": ["r"],
-                "chunk_metadata": {"selected_chunk_indices": [0]},
+                "optimized_chunks": ["r"],
+                "selected_chunk_indices": [0],
             }
         )
 

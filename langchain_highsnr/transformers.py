@@ -63,6 +63,6 @@ class HighSNRDocumentTransformer(BaseDocumentTransformer):
             )
             for w in response.get("warnings") or []:
                 _log.warning("HighSNR API warning: %s", w)
-            for chunk in response.get("selected_chunks", []):
+            for chunk in response.get("optimized_chunks", []):
                 result.append(Document(page_content=chunk, metadata=dict(doc.metadata)))
         return result

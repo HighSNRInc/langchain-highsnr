@@ -38,7 +38,7 @@ def test_one_api_call_per_document(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         calls.append(json)
-        return _FakeResponse({"selected_chunks": ["compressed"]})
+        return _FakeResponse({"optimized_chunks": ["compressed"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -58,7 +58,7 @@ def test_passes_context_hint(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         captured.update(json)
-        return _FakeResponse({"selected_chunks": ["result"]})
+        return _FakeResponse({"optimized_chunks": ["result"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -71,7 +71,7 @@ def test_passes_context_hint(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_preserves_source_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["chunk A", "chunk B"]})
+        return _FakeResponse({"optimized_chunks": ["chunk A", "chunk B"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -87,7 +87,7 @@ def test_include_boundaries_defaults_true(monkeypatch: pytest.MonkeyPatch) -> No
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         captured.update(json)
-        return _FakeResponse({"selected_chunks": ["r"]})
+        return _FakeResponse({"optimized_chunks": ["r"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
@@ -120,7 +120,7 @@ def test_api_warnings_are_logged(
 ) -> None:
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
         return _FakeResponse(
-            {"selected_chunks": ["compressed"], "warnings": ["budget exceeded"]}
+            {"optimized_chunks": ["compressed"], "warnings": ["budget exceeded"]}
         )
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
@@ -135,7 +135,7 @@ def test_output_metadata_is_not_aliased(monkeypatch: pytest.MonkeyPatch) -> None
     """Mutating one output doc's metadata must not affect sibling docs."""
 
     def fake_post(url: str, json: Dict[str, Any], **kwargs: Any) -> _FakeResponse:
-        return _FakeResponse({"selected_chunks": ["chunk A", "chunk B"]})
+        return _FakeResponse({"optimized_chunks": ["chunk A", "chunk B"]})
 
     monkeypatch.setattr(client_mod.requests, "post", fake_post)
 
